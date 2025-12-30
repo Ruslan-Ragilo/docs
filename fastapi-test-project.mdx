@@ -1,0 +1,179 @@
+---
+title: FastAPI test project
+description: FastAPI application with Google Gemini AI integration and SQLite database
+---
+
+This project is a FastAPI application that integrates with Google Gemini AI to process user prompts and stores chat requests in a SQLite database.
+
+## Project structure
+
+```
+fastapi-test/
+├── main.py              # FastAPI application entry point
+├── gemini_client.py     # Google Gemini AI client
+├── db.py                # Database models and queries
+├── config.py            # Configuration settings
+├── chat_request.db      # SQLite database file
+├── pyproject.toml       # Project dependencies
+└── README.md            # Project documentation
+```
+
+## Dependencies
+
+The project requires Python 3.9+ and the following packages:
+
+- `fastapi>=0.128.0` - Web framework
+- `google-genai>=1.47.0` - Google Gemini AI client
+- `sqlalchemy>=2.0.45` - Database ORM
+- `uvicorn>=0.39.0` - ASGI server
+
+## Installation
+
+Install dependencies using pip:
+
+```bash
+pip install fastapi google-genai sqlalchemy uvicorn
+```
+
+Or using uv:
+
+```bash
+uv sync
+```
+
+## Configuration
+
+The application uses a configuration class in `config.py`:
+
+```python
+class Congif: 
+    api_key = "YOUR_GOOGLE_GEMINI_API_KEY"
+
+config_obj = Congif()
+```
+
+You need to set your Google Gemini API key in the `api_key` field.
+
+## Database schema
+
+The application uses SQLite with SQLAlchemy ORM. The database schema includes:
+
+### ChatRequest table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | Integer | Primary key |
+| `ip_address` | String | User IP address (indexed) |
+| `propmt` | String | User prompt text |
+| `response` | String | AI response text |
+
+The database is automatically created on application startup using the lifespan context manager.
+
+## API endpoints
+
+### GET /
+
+Returns a simple greeting message.
+
+**Response:**
+
+```json
+"Hello Senior"
+```
+
+### POST /
+
+Sends a prompt to Google Gemini AI and returns the response.
+
+**Request body:**
+
+```json
+{
+  "promt": "Your question or prompt here"
+}
+```
+
+**Response:**
+
+Returns the AI-generated text response from Google Gemini.
+
+## Running the application
+
+Start the FastAPI server:
+
+```bash
+uvicorn main:app --reload
+```
+
+The application will be available at `http://127.0.0.1:8000`.
+
+## Code overview
+
+### main.py
+
+The main application file defines:
+
+- **Lifespan context manager**: Creates database tables on startup
+- **GET /**: Simple endpoint returning a greeting
+- **POST /**: Accepts a prompt and returns AI response
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(engine)
+    yield
+
+app = FastAPI(lifespan=lifespan)
+```
+
+### gemini_client.py
+
+Handles communication with Google Gemini AI:
+
+```python
+def get_answer(promt: str):
+    response = client.models.generate_content(
+        model="gemini-2.5-flash", contents=promt
+    )
+    return response.text
+```
+
+Uses the `gemini-2.5-flash` model for content generation.
+
+### db.py
+
+Defines database models and query functions:
+
+- **ChatRequest model**: Stores chat interactions
+- **get_user_request()**: Retrieves chat history by IP address
+
+```python
+def get_user_request(ip_address: str):
+    with session() as new_session:
+        query = select(ChatRequest).filter_by(ip_address=ip_address)
+        result = new_session.execute(query)
+        return result.scalars().all()
+```
+
+## Usage example
+
+Send a POST request to the API:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/" \
+  -H "Content-Type: application/json" \
+  -d '{"promt": "What is FastAPI?"}'
+```
+
+The API will return the AI-generated response.
+
+## Interactive documentation
+
+FastAPI automatically generates interactive API documentation:
+
+- **Swagger UI**: `http://127.0.0.1:8000/docs`
+- **ReDoc**: `http://127.0.0.1:8000/redoc`
+
+## Repository
+
+Source code: https://github.com/Ruslan-Ragilo/fastapi-test
