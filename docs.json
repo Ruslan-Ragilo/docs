@@ -48,7 +48,8 @@
           {
             "group": "Frameworks",
             "pages": [
-              "fastapi-overview"
+              "fastapi-overview",
+              "fastapi-test-project"
             ]
           }
         ]
